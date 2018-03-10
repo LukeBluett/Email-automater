@@ -1,49 +1,49 @@
-import smtplib
+import argparse, configparser, getpass, smtplib, time
+import dbhandler, my_email
 from smtplib import *
-import argparse
-import dbhandler
-import my_email
 from dbhandler import *
 from my_email import *
-import getpass
-import time
-
-
-def check_status():
-	return 0
 	
-def send_mails():
-	return 0
-	
-if __name__ == "__main__":
+if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-e", "--email", help="Set email of sender")
-	parser.add_argument("-n", "--name", help="Set name of sender")
+	
+	parser.add_argument('-d', '--database', help='Set Database for mongodb')
+	parser.add_argument('-e', '--email', help='Set email of sender')
+	parser.add_argument('-c', '--config', help='Pass in config file')
+	parser.add_argument('-i', '--ip', help='Set ip address for mongodb')
+	parser.add_argument('-n', '--name', help='Set name of sender')
+	parser.add_argument('-p', '--port', help='Set port number for mongodb')
 
 	args = parser.parse_args()
 	
-	sender = ""
-	name = ""
-	password = ""
-	if args.email:
+	sender = ''
+	name = ''
+	password = ''
+	ip_address = ''
+	port_no = 0
+	database = ''
+	
+	if args.email and args.name and args.ip and args.port and args.database:
 		sender = args.email
-
-	if args.name:
 		name = args.name
+		password = getpass.getpass('Password')
+		ip_address = args.ip
+		port_no = args.port
+		database = args.database
+
+	if args.config:
+		config = configparser.ConfigParser()
+		config.read(args.config)
+		sender = config.get('email', 'address')
+		name = config.get('email', 'name')
+		ip_address = config.get('mongo', 'address')
+		port_no = int(config.get('mongo', 'port'))
+		password = getpass.getpass('Password:')
+		database = config.get('mongo', 'database')
 		
-	password = getpass.getpass("Password: ")
-	count = 0
-	dbHandler = DBHandler('172.17.0.2', 27017, "rcc")
+	dbHandler = DBHandler(ip_address, port_no, database)
 	while(True):
 		dbHandler.find_new_tasks(sender, password)
-		time.sleep(30)
-		print("Hi " + str(count))
-		count += 1
-	"""
-	sender2 = Sender(sender, name)
-	receivers = Receivers([sender], [name])
-	my_email2 = Email("smtp.gmail.com", 587, sender2.get_sender(), password)
-	my_email2.set_message(sender2.from_string(), receivers.to_string(0), "Test subject", "test body")
-	my_email2.send(sender2.get_sender(), receivers.get_receiver(0))
-	"""
+		time.sleep(3600)
+		
 	
